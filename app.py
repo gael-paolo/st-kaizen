@@ -584,7 +584,7 @@ def pestania_plan_kaizen():
         # Tabla completa
         st.subheader("📋 Todas las acciones")
         
-        columnas_admin = ['id', 'fecha_hallazgo', 'sede', 'hallazgo', 'responsable', 'prioridad', 
+        columnas_admin = ['id', 'fecha_hallazgo', 'sede', 'accion', 'responsable', 'prioridad', 
                          'estado_general', 'porc_avance', 'SEMAFORO', 'deadline', 'valor']
         
         columnas_admin_disponibles = [col for col in columnas_admin if col in df_filtrado_admin.columns]
