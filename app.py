@@ -409,7 +409,44 @@ def pestania_plan_kaizen():
                     st.rerun()
     
     # ===== SECCIÓN DE BÚSQUEDA Y FILTROS =====
-    st.subheader("🔍 Búsqueda y filtros del Plan")
+
+    col_titulo, col_actualizar = st.columns([4, 1])
+
+    with col_titulo:
+        st.subheader("🔍 Búsqueda y filtros del Plan")
+
+    with col_actualizar:
+        if st.button(
+            "🔄 Actualizar datos",
+            key="actualizar_datos_plan",
+            use_container_width=True
+        ):
+            # Limpiar la caché
+            st.cache_data.clear()
+
+            # Recargar los datos directamente desde Google Sheets
+            df_plan_actualizado, df_seguimiento_actualizado = load_data()
+
+            # Actualizar los DataFrames de la sesión
+            st.session_state.df_plan = df_plan_actualizado
+            st.session_state.df_seguimiento = df_seguimiento_actualizado
+
+            # Reiniciar los selectores para incorporar las opciones nuevas
+            filtros_a_reiniciar = [
+                "responsable_admin",
+                "estado_admin",
+                "prioridad_admin",
+                "sede_admin",
+                "origen_admin",
+                "objetivo_admin",
+                "objetivo_especifico_admin"
+            ]
+
+            for filtro in filtros_a_reiniciar:
+                st.session_state.pop(filtro, None)
+
+            # Actualizar la interfaz
+            st.rerun()
 
     # Preparar datos completos
     df_completo = preparar_datos_completos(
