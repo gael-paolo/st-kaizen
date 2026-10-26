@@ -410,45 +410,134 @@ def pestania_plan_kaizen():
     
     # ===== SECCIÓN DE BÚSQUEDA Y FILTROS =====
     st.subheader("🔍 Búsqueda y filtros del Plan")
-    
+
     # Preparar datos completos
-    df_completo = preparar_datos_completos(st.session_state.df_plan, st.session_state.df_seguimiento)
-    
+    df_completo = preparar_datos_completos(
+        st.session_state.df_plan,
+        st.session_state.df_seguimiento
+    )
+
     # Filtros
-    col1, col2, col3 = st.columns(3)
-    
+    col1, col2, col3, col4 = st.columns(4)
+
     with col1:
         # Búsqueda por texto
-        texto_busqueda = st.text_input("🔎 Buscar por ID, hallazgo o acción", placeholder="Ej: 123, mantenimiento, limpieza...", key="texto_busqueda_admin")
-        
+        texto_busqueda = st.text_input(
+            "🔎 Buscar por ID, hallazgo o acción",
+            placeholder="Ej: 123, mantenimiento, limpieza...",
+            key="texto_busqueda_admin"
+        )
+
         # Filtro por responsable
-        responsables_all = sorted(df_completo['responsable'].dropna().unique())
-        responsables_filter = st.multiselect("Responsable", responsables_all, key="responsable_admin") if responsables_all else []
-    
+        responsables_all = sorted(
+            df_completo['responsable'].dropna().unique()
+        )
+        responsables_filter = (
+            st.multiselect(
+                "Responsable",
+                responsables_all,
+                key="responsable_admin"
+            )
+            if responsables_all else []
+        )
+
     with col2:
         # Filtro por estado
-        estados_all = sorted(df_completo['estado_general'].unique())
-        estados_filter = st.multiselect("Estado", estados_all, default=estados_all, key="estado_admin") if estados_all else []
-        
+        estados_all = sorted(
+            df_completo['estado_general'].dropna().unique()
+        )
+        estados_filter = (
+            st.multiselect(
+                "Estado",
+                estados_all,
+                default=estados_all,
+                key="estado_admin"
+            )
+            if estados_all else []
+        )
+
         # Filtro por prioridad
-        prioridades_all = sorted(df_completo['prioridad'].dropna().unique())
-        prioridades_filter = st.multiselect("Prioridad", prioridades_all, default=prioridades_all, key="prioridad_admin") if prioridades_all else []
-    
+        prioridades_all = sorted(
+            df_completo['prioridad'].dropna().unique()
+        )
+        prioridades_filter = (
+            st.multiselect(
+                "Prioridad",
+                prioridades_all,
+                default=prioridades_all,
+                key="prioridad_admin"
+            )
+            if prioridades_all else []
+        )
+
     with col3:
         # Filtro por sede
-        sedes_all = sorted(df_completo['sede'].dropna().unique())
-        sedes_filter = st.multiselect("Sede", sedes_all, default=sedes_all, key="sede_admin") if sedes_all else []
-        
+        sedes_all = sorted(
+            df_completo['sede'].dropna().unique()
+        )
+        sedes_filter = (
+            st.multiselect(
+                "Sede",
+                sedes_all,
+                default=sedes_all,
+                key="sede_admin"
+            )
+            if sedes_all else []
+        )
+
         # Rango de fechas
         rango_fechas_admin = st.date_input(
             "Rango de fechas (hallazgo)",
             value=(),
             key="fechas_admin"
         )
-    
-    # Aplicar filtros
+
+    with col4:
+        # Filtro por origen
+        origenes_all = sorted(
+            df_completo['origen'].dropna().unique()
+        )
+        origen_filter = (
+            st.multiselect(
+                "Origen",
+                origenes_all,
+                default=origenes_all,
+                key="origen_admin"
+            )
+            if origenes_all else []
+        )
+
+        # Filtro por objetivo
+        objetivos_all = sorted(
+            df_completo['objetivo'].dropna().unique()
+        )
+        objetivo_filter = (
+            st.multiselect(
+                "Objetivo",
+                objetivos_all,
+                default=objetivos_all,
+                key="objetivo_admin"
+            )
+            if objetivos_all else []
+        )
+
+        # Filtro por objetivo específico
+        objetivos_especificos_all = sorted(
+            df_completo['objetivo_especifico'].dropna().unique()
+        )
+        objetivo_especifico_filter = (
+            st.multiselect(
+                "Objetivo específico",
+                objetivos_especificos_all,
+                default=objetivos_especificos_all,
+                key="objetivo_especifico_admin"
+            )
+            if objetivos_especificos_all else []
+        )
+
+    # ===== APLICAR FILTROS =====
     df_filtrado_admin = df_completo.copy()
-    
+
     if texto_busqueda:
         df_filtrado_admin = df_filtrado_admin[
             df_filtrado_admin['id'].astype(str).str.contains(texto_busqueda, case=False, na=False) |
