@@ -1,4 +1,13 @@
-"""Portal Kaizen
+"""Portal Kaizen — un solo archivo.
+
+Google Sheet (mismo archivo del plan), pestañas:
+  plan_kaizen   14 columnas (id, fecha_hallazgo, sede, origen, hallazgo, ocurrencia, consecuencia, valor,
+                prioridad, accion, tipo_accion, responsable, sucursal, deadline)
+  seguimiento   las 6 columnas de siempre
+  catalogos     categoria | valor              -> listas cerradas (el orden de las filas es el de la lista)
+  accesos       usuario | clave | email        -> claves ('admin', 'usuario' compartida o una por persona) y correo
+Alertas por correo (Gmail): ver correo.py y [gmail] en secrets.
+Sin credenciales (sin secrets) funciona en modo local leyendo plan_kaizen.xlsx, sin guardar nada.
 """
 import hmac
 import os
@@ -467,26 +476,28 @@ def ingresar(D):
     with centro:
         st.markdown("<h1 style='text-align:center'>🏭 Portal Kaizen</h1>", unsafe_allow_html=True)
         with st.form("acceso"):
-            quien = st.selectbox("¿Quién eres?", ["Administrador"] + opciones(D["cats"], "responsable"))
-            clave = st.text_input("Contraseña", type="password")
+            quien = st.text_input("Usuario", autocomplete="username", placeholder="Escribe tu usuario")
+            clave = st.text_input("Contraseña", type="password", autocomplete="current-password")
             ok = st.form_submit_button("Ingresar", type="primary", width="stretch")
         if ok:
-            rol = "admin" if quien == "Administrador" else "usuario"
-            propia = (D["claves"].get(quien.lower())
-                      if rol == "usuario" and quien.lower() not in ("admin", "usuario") else None)
+            u = quien.strip().lower()
+            resp = {r.lower(): r for r in opciones(D["cats"], "responsable")}     # la lista NO se muestra
+            rol = "admin" if u == "admin" else ("usuario" if u in resp else None)
+            propia = (D["claves"].get(u) if rol == "usuario" and u != "usuario" else None)
             FALLOS = compartido()["fallos"]
-            fallos = [t for t in FALLOS.get(quien, []) if time.time() - t < 600]
+            fallos = [t for t in FALLOS.get(u, []) if time.time() - t < 600]
             # admin: solo la fila 'admin'. Responsable: su clave propia o, si no tiene, la compartida 'usuario'.
-            real = D["claves"].get("admin", "") if rol == "admin" else (propia or D["claves"].get("usuario", ""))
+            real = (D["claves"].get("admin", "") if rol == "admin"
+                    else (propia or D["claves"].get("usuario", "")) if rol == "usuario" else "")
             if len(fallos) >= 5:
                 st.error("Demasiados intentos. Espera 10 minutos.")
-            elif real and hmac.compare_digest(clave.encode(), real.encode()):
-                FALLOS.pop(quien, None)
-                st.session_state["sesion"] = (rol, "admin" if rol == "admin" else quien)
+            elif real and clave and hmac.compare_digest(clave.encode(), real.encode()):
+                FALLOS.pop(u, None)
+                st.session_state["sesion"] = (rol, "admin" if rol == "admin" else resp[u])
                 st.rerun()
-            else:
-                FALLOS[quien] = fallos + [time.time()]
-                st.error("Contraseña incorrecta." if real else "Aún no tienes contraseña en la pestaña 'accesos'.")
+            else:                       # mismo mensaje exista o no el usuario (no revela quién está registrado)
+                FALLOS[u] = fallos + [time.time()]
+                st.error("Usuario o contraseña incorrectos.")
     st.stop()
 
 
