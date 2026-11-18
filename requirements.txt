@@ -1,6 +1,7 @@
-streamlit
-pandas
+streamlit>=1.55
+pandas>=2.2
 numpy
-plotly
+plotly>=5.24
+gspread>=6.1
 openpyxl
-st-gsheets-connection
+tzdata
