@@ -310,7 +310,7 @@ def preparar(d):
             c = str(ac["clave"].iloc[i]).strip()
             if c and c != "nan":
                 claves.setdefault(u, c)
-            mail = str(ac["email"].iloc[i]).strip() if "email" in ac.columns else ""
+            mail = "".join(str(ac["email"].iloc[i]).split()) if "email" in ac.columns else ""   # sin espacios raros
             nom = str(ac["nombre"].iloc[i]).strip() if "nombre" in ac.columns else ""
             contactos.setdefault(u, {"email": mail if "@" in mail else "", "nombre": "" if nom == "nan" else nom})
     return plan, seg, cats, claves, contactos, adv
@@ -935,13 +935,14 @@ def alertas(D):
         msgs = []
         for u in elegidos:
             asunto, cuerpo, texto = correo.construir(con.loc[u, "nombre"], acc[acc["responsable"] == u], hoy(), url)
-            msgs.append(correo.mensaje(cfg["user"], cfg.get("nombre", "Calidad Kaizen"), con.loc[u, "email"],
-                                       asunto, cuerpo, texto, cc=cfg.get("cc", "")))
+            msgs.append(correo.mensaje("".join(str(cfg["user"]).split()), cfg.get("nombre", "Calidad Kaizen"),
+                                       con.loc[u, "email"], asunto, cuerpo, texto,
+                                       cc="".join(str(cfg.get("cc", "")).split())))
         try:
             with st.spinner("Enviando…"):
                 res = correo.enviar(msgs, cfg["user"], cfg["app_password"])
         except Exception as e:
-            st.error(f"No se pudo conectar con Gmail: {type(e).__name__}. Revisa `user` y `app_password`.")
+            st.error(f"No se pudo conectar con Gmail. {correo.explicar_error(e)}")
             return
         st.session_state["al_resultado"] = res
         del st.session_state["al_ok"]

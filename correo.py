@@ -1,4 +1,4 @@
-"""Alertas 
+"""Alertas por correo del Portal Kaizen
 """
 import html
 import smtplib
@@ -166,11 +166,32 @@ def mensaje(remitente, nombre_remitente, destino, asunto, cuerpo_html, texto, cc
     return m
 
 
+def limpiar_clave(clave):
+    """Deja solo letras y números ASCII.
+
+    Google muestra la contraseña de aplicación en grupos de 4 separados por espacios, y al copiarla suelen
+    colarse espacios "duros" (U+00A0) o invisibles que hacen fallar el login con UnicodeEncodeError.
+    """
+    return "".join(c for c in str(clave) if c.isascii() and c.isalnum())
+
+
+def explicar_error(e):
+    """Mensaje claro (sin datos sensibles) para un error al conectar/autenticar con Gmail."""
+    if isinstance(e, smtplib.SMTPAuthenticationError):
+        return ("Gmail rechazó el usuario o la contraseña de aplicación. Revisa que sea una contraseña de "
+                "APLICACIÓN (16 letras) de esa misma cuenta y que tenga verificación en 2 pasos.")
+    if isinstance(e, UnicodeError):
+        return "La contraseña o el usuario tiene caracteres no válidos (espacios raros). Pégalos de nuevo."
+    if isinstance(e, (TimeoutError, ConnectionError, OSError)):
+        return "No hubo conexión con Gmail (red o puerto 465 bloqueado). Intenta de nuevo."
+    return f"Error al conectar con Gmail ({type(e).__name__})."
+
+
 def enviar(mensajes, usuario, app_password):
     """Envía por Gmail (SMTP SSL). Devuelve [(destino, ok, error)]. Una falla no detiene las demás."""
     resultados = []
     with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=ssl.create_default_context(), timeout=30) as s:
-        s.login(usuario, app_password.replace(" ", ""))     # Google la muestra con espacios; sin ellos también sirve
+        s.login(str(usuario).strip(), limpiar_clave(app_password))
         for m in mensajes:
             try:
                 s.send_message(m)
