@@ -863,19 +863,29 @@ def aviso_origenes(D, mostrar=True):
 
 
 def config_gmail():
-    """Credenciales de Gmail desde secrets ([gmail] user, app_password, nombre, cc, url_portal) o None."""
+    """Credenciales de Gmail desde secrets ([gmail] user, app_password, nombre, cc, url_portal).
+
+    Devuelve (config, motivo): config es None si no sirve y `motivo` explica por qué (sin mostrar valores).
+    """
     try:
         g = dict(st.secrets["gmail"])
     except Exception:
-        return None
-    return g if g.get("user") and g.get("app_password") else None
+        try:
+            secciones = ", ".join(sorted(st.secrets.keys())) or "ninguna"
+        except Exception:
+            secciones = "ninguna"
+        return None, f"No encuentro la sección [gmail] en los secrets (secciones que sí hay: {secciones})."
+    faltan = [k for k in ("user", "app_password") if not str(g.get(k, "")).strip()]
+    if faltan:
+        return None, f"En [gmail] faltan: {', '.join(faltan)} (campos encontrados: {', '.join(g) or 'ninguno'})."
+    return g, ""
 
 
 def alertas(D):
     st.header("✉️ Alertas por correo")
     st.caption("Cada responsable recibe SU reporte: acciones pendientes, en proceso y resumen de cerradas. "
                "Tú eliges a quién enviar: no se envía a nadie por defecto.")
-    cfg = config_gmail()
+    cfg, motivo = config_gmail()
     acc, cats = D["acc"], D["cats"]
     filas = []
     for u in opciones(cats, "responsable"):
@@ -910,11 +920,14 @@ def alertas(D):
         url = (cfg or {}).get("url_portal", "")
         asunto, cuerpo, _ = correo.construir(con.loc[prev, "nombre"], acc[acc["responsable"] == prev], hoy(), url)
         st.caption(f"**Asunto:** {asunto}")
-        components.html(cuerpo, height=760, scrolling=True)
+        if hasattr(st, "iframe"):       # el HTML ya viene escapado (html.escape) en correo.construir
+            st.iframe(cuerpo, height=760)
+        else:                           # versiones antiguas de Streamlit
+            components.html(cuerpo, height=760, scrolling=True)
     st.divider()
     if not cfg:
-        st.warning("Para enviar falta configurar Gmail en los secrets: sección `[gmail]` con `user` y `app_password` "
-                   "(contraseña de aplicación). Mientras tanto puedes ver las vistas previas.")
+        st.warning(f"Para enviar falta configurar Gmail en los secrets (sección `[gmail]` con `user` y "
+                   f"`app_password`). {motivo} Mientras tanto puedes ver las vistas previas.")
     confirmo = st.checkbox(f"Confirmo que quiero enviar {len(elegidos)} correo(s) ahora", key="al_ok",
                            disabled=not (cfg and elegidos))
     if st.button("📧 Enviar a los elegidos", type="primary", disabled=not (cfg and elegidos and confirmo)):
@@ -1022,5 +1035,5 @@ def main():
 
 from streamlit.runtime.scriptrunner import get_script_run_ctx  # noqa: E402
 
-if get_script_run_ctx():   
+if get_script_run_ctx():    # solo dentro de Streamlit (así los tests pueden importar este archivo)
     main()
