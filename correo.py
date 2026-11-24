@@ -77,7 +77,7 @@ def _estado(plazo):
     return f'<b style="color:{COLOR_PLAZO.get(plazo, "#555")}">{_e(plazo)}</b>', ""
 
 
-def construir(nombre, acc, hoy, url_portal="https://st-kaizen-wjpbznjpca9ukxwfcz5odp.streamlit.app/"):
+def construir(nombre, acc, hoy, url_portal=""):
     """Devuelve (asunto, html, texto) del reporte de una persona. `acc` = sus acciones."""
     r = resumen(acc)
     mes = f"{MESES[hoy.month - 1].capitalize()} {hoy.year}"
